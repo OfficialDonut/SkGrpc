@@ -1,0 +1,13 @@
+name: SkGrpc
+version: 0.0.1
+main: com.github.officialdonut.skgrpc.SkGrpc
+api-version: "1.21.4"
+depend: [Skript, SkProtobuf]
+
+permissions:
+  skgrpc.admin:
+    default: op
+
+commands:
+  skgrpc:
+    permission: skgrpc.admin
