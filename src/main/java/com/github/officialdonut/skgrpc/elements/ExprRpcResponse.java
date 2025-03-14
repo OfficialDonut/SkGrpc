@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class ExprRpcResponse extends SimpleExpression<Message> {
 
     static {
-        Skript.registerExpression(ExprRpcResponse.class, Message.class, ExpressionType.COMBINED, "response[s] of %grpcchannel% [g]rpc %-string% for [request] %protobufmessage%");
+        Skript.registerExpression(ExprRpcResponse.class, Message.class, ExpressionType.COMBINED, "response[s] of %grpcchannel% [g]rpc %*string% for [request] %protobufmessage%");
     }
 
     private Expression<Channel> exprChannel;
@@ -35,7 +35,7 @@ public class ExprRpcResponse extends SimpleExpression<Message> {
             return false;
         }
         if (descriptor.getType() == MethodDescriptor.MethodType.CLIENT_STREAMING || descriptor.getType() == MethodDescriptor.MethodType.BIDI_STREAMING) {
-            Skript.error("Cannot use client side streaming RPC in response expression");
+            Skript.error("Client side streaming RPCs must use async request stream.");
             return false;
         }
         return true;

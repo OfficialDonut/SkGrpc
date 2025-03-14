@@ -23,7 +23,7 @@ public class SkGrpc extends JavaPlugin {
         rpcManager.loadDescriptors();
 
         try {
-            Skript.registerAddon(this).loadClasses("com.github.officialdonut.skgrpc" , "elements", "events", "types");
+            Skript.registerAddon(this).loadClasses("com.github.officialdonut.skgrpc" , "elements", "events");
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, "Failed to register Skript elements", e);
         }
@@ -33,6 +33,7 @@ public class SkGrpc extends JavaPlugin {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
             reloadConfig();
+            SkProtobuf.getInstance().getProtoManager().loadDescriptors();
             rpcManager.loadDescriptors();
             sender.sendMessage("Successfully reloaded SkGrpc.");
             return true;

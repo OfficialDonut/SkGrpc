@@ -1,25 +1,25 @@
 package com.github.officialdonut.skgrpc.events;
 
 import ch.njol.skript.registrations.EventValues;
-import com.google.common.base.Throwables;
+import io.grpc.Status;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 public class GrpcOnErrorEvent extends Event {
 
     static {
-        EventValues.registerEventValue(GrpcOnErrorEvent.class, String.class, GrpcOnErrorEvent::getError);
+        EventValues.registerEventValue(GrpcOnErrorEvent.class, Status.class, GrpcOnErrorEvent::getStatus);
     }
 
     private static final HandlerList HANDLERS = new HandlerList();
-    private final String error;
+    private final Status status;
 
     public GrpcOnErrorEvent(Throwable throwable) {
-        error = Throwables.getStackTraceAsString(throwable);
+        status = Status.fromThrowable(throwable);
     }
 
-    public String getError() {
-        return error;
+    public Status getStatus() {
+        return status;
     }
 
     @Override

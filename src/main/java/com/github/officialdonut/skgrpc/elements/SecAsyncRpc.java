@@ -7,6 +7,7 @@ import ch.njol.skript.lang.*;
 import ch.njol.skript.variables.Variables;
 import ch.njol.util.Kleenean;
 import com.github.officialdonut.skgrpc.SkGrpc;
+import com.github.officialdonut.skgrpc.StreamObserverWrapper;
 import com.github.officialdonut.skgrpc.events.GrpcOnCompletedEvent;
 import com.github.officialdonut.skgrpc.events.GrpcOnErrorEvent;
 import com.github.officialdonut.skgrpc.events.GrpcOnNextEvent;
@@ -25,7 +26,7 @@ import java.util.List;
 public class SecAsyncRpc extends Section {
 
     static {
-        Skript.registerSection(SecAsyncRpc.class, "%grpcchannel% [async] [g]rpc %-string% for [request] %protobufmessage%");
+        Skript.registerSection(SecAsyncRpc.class, "%grpcchannel% [async] [g]rpc %*string% for [request] %protobufmessage%", "%grpcchannel% [async] [g]rpc %*string% for [request] stream %grpcrequeststream%");
         entryValidator = EntryValidator.builder()
                 .addSection("on next", true)
                 .addSection("on error", true)
@@ -40,11 +41,12 @@ public class SecAsyncRpc extends Section {
     private Trigger onCompletedTrigger;
     private Expression<Channel> exprChannel;
     private Expression<Message> exprRequest;
+    private Expression<StreamObserverWrapper> exprRequestStream;
     private MethodDescriptor<Message, Message> descriptor;
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
+    public boolean init(Expression<?>[] expressions, int matchedPattern, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
         EntryContainer entryContainer = entryValidator.validate(sectionNode);
         if (entryContainer == null) {
             return false;
@@ -54,13 +56,25 @@ public class SecAsyncRpc extends Section {
         onCompletedTrigger = loadTrigger(entryContainer, "on completed", GrpcOnCompletedEvent.class);
 
         exprChannel = (Expression<Channel>) expressions[0];
-        exprRequest = (Expression<Message>) expressions[2];
         String rpcName = ((Literal<String>) expressions[1]).getSingle();
         descriptor = SkGrpc.getInstance().getRpcManager().getRpcDescriptor(rpcName);
         if (descriptor == null) {
             Skript.error("Failed to find descriptor for RPC: " + rpcName);
             return false;
         }
+
+        if (matchedPattern == 0) {
+            exprRequest = (Expression<Message>) expressions[2];
+            if (descriptor.getType() == MethodDescriptor.MethodType.CLIENT_STREAMING || descriptor.getType() == MethodDescriptor.MethodType.BIDI_STREAMING) {
+                Skript.error("Client side streaming RPCs must use async request stream.");
+            }
+        } else {
+            exprRequestStream = (Expression<StreamObserverWrapper>) expressions[2];
+            if (descriptor.getType() == MethodDescriptor.MethodType.UNARY || descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
+                Skript.error("Async request stream can only be used for client side streaming RPCs.");
+            }
+        }
+
         return true;
     }
 
@@ -71,6 +85,11 @@ public class SecAsyncRpc extends Section {
 
     @Override
     protected @Nullable TriggerItem walk(Event event) {
+        Channel channel = exprChannel.getSingle(event);
+        if (channel == null) {
+            return super.walk(event, false);
+        }
+
         Object localVars = Variables.copyLocalVariables(event);
         StreamObserver<Message> responseObserver = new StreamObserver<>() {
             Object observerLocalVars = localVars;
@@ -79,7 +98,7 @@ public class SecAsyncRpc extends Section {
                 if (onNextTrigger != null) {
                     GrpcOnNextEvent onNextEvent = new GrpcOnNextEvent(message);
                     Variables.setLocalVariables(onNextEvent, observerLocalVars);
-                    onNextTrigger.execute(onNextEvent);
+                    TriggerItem.walk(onNextTrigger, onNextEvent);
                     observerLocalVars = Variables.copyLocalVariables(onNextEvent);
                 }
             }
@@ -88,7 +107,7 @@ public class SecAsyncRpc extends Section {
                 if (onErrorTrigger != null) {
                     GrpcOnErrorEvent onErrorEvent = new GrpcOnErrorEvent(throwable);
                     Variables.setLocalVariables(onErrorEvent, observerLocalVars);
-                    onErrorTrigger.execute(onErrorEvent);
+                    TriggerItem.walk(onErrorTrigger, onErrorEvent);
                 }
             }
             @Override
@@ -96,15 +115,21 @@ public class SecAsyncRpc extends Section {
                 if (onCompletedTrigger != null) {
                     GrpcOnCompletedEvent onCompletedEvent = new GrpcOnCompletedEvent();
                     Variables.setLocalVariables(onCompletedEvent, observerLocalVars);
-                    onCompletedTrigger.execute(onCompletedEvent);
+                    TriggerItem.walk(onCompletedTrigger, onCompletedEvent);
                 }
             }
         };
 
-        if (descriptor.getType() == MethodDescriptor.MethodType.UNARY || descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
-            SkGrpc.getInstance().getRpcManager().invokeRpc(exprChannel.getSingle(event), descriptor, exprRequest.getSingle(event), responseObserver);
+        if (exprRequest != null) {
+            Message request = exprRequest.getSingle(event);
+            if (request != null) {
+                SkGrpc.getInstance().getRpcManager().invokeRpc(channel, descriptor, request, responseObserver);
+            }
         } else {
-            // todo
+            StreamObserverWrapper requestStream = exprRequestStream.getSingle(event);
+            if (requestStream != null) {
+                requestStream.setDelegate(SkGrpc.getInstance().getRpcManager().invokeRpc(channel, descriptor, responseObserver));
+            }
         }
 
         return super.walk(event, false);
@@ -112,6 +137,8 @@ public class SecAsyncRpc extends Section {
 
     @Override
     public String toString(@Nullable Event event, boolean b) {
-        return "";
+        return exprRequest != null ?
+                "%s async rpc %s for request %s".formatted(exprChannel.toString(event, b), descriptor, exprRequest.toString(event, b)) :
+                "%s async rpc %s for request stream %s".formatted(exprChannel.toString(event, b), descriptor, exprRequestStream.toString(event, b));
     }
 }
