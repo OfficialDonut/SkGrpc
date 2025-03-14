@@ -7,6 +7,8 @@ import io.grpc.Channel;
 public class TypeGrpcChannel {
 
     static {
-        Classes.registerClass(new ClassInfo<>(Channel.class, "grpcchannel").name("gRPC Channel"));
+        Classes.registerClass(new ClassInfo<>(Channel.class, "grpcchannel")
+                .name("gRPC Channel")
+                .user("grpc ?channel"));
     }
 }

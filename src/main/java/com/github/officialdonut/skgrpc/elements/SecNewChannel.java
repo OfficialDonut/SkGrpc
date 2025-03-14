@@ -21,7 +21,7 @@ import java.util.List;
 public class SecNewChannel extends Section {
 
     static {
-        Skript.registerSection(SecNewChannel.class, "[new] [g]rpc channel %object%");
+        Skript.registerSection(SecNewChannel.class, "[open] [new] [g]rpc channel %object%");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("host", null, false, String.class))
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
@@ -29,6 +29,7 @@ public class SecNewChannel extends Section {
     }
 
     private static final EntryValidator entryValidator;
+
     private Variable<?> variable;
     private Expression<String> exprHost;
     private Expression<Number> exprPort;
@@ -53,9 +54,7 @@ public class SecNewChannel extends Section {
 
     @Override
     protected @Nullable TriggerItem walk(Event event) {
-        String host = exprHost.getSingle(event);
-        int port = exprPort.getSingle(event).intValue();
-        ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(host, port, InsecureChannelCredentials.create());
+        ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(exprHost.getSingle(event), exprPort.getSingle(event).intValue(), InsecureChannelCredentials.create());
         variable.change(event, new Object[]{builder.build()}, Changer.ChangeMode.SET);
         return super.walk(event, false);
     }

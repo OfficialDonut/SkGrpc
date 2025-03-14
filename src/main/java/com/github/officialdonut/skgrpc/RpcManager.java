@@ -7,9 +7,11 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
+import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ClientCalls;
+import io.grpc.stub.StreamObserver;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,7 +66,29 @@ public class RpcManager {
             ClientCalls.blockingServerStreamingCall(channel, descriptor, CallOptions.DEFAULT, request).forEachRemaining(responses::add);
             return responses.toArray(Message[]::new);
         } else {
-            throw new IllegalStateException("Attempted to use blocking API for client side streaming RPC");
+            throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
+        }
+    }
+
+    public void invokeRpc(Channel channel, MethodDescriptor<Message, Message> descriptor, Message request, StreamObserver<Message> responseObserver) {
+        ClientCall<Message, Message> call = channel.newCall(descriptor, CallOptions.DEFAULT);
+        if (descriptor.getType() == MethodDescriptor.MethodType.UNARY) {
+            ClientCalls.asyncUnaryCall(call, request, responseObserver);
+        } else if (descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
+            ClientCalls.asyncServerStreamingCall(call, request, responseObserver);
+        } else {
+            throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
+        }
+    }
+
+    public StreamObserver<Message> invokeRpc(Channel channel, MethodDescriptor<Message, Message> descriptor, StreamObserver<Message> responseObserver) {
+        ClientCall<Message, Message> call = channel.newCall(descriptor, CallOptions.DEFAULT);
+        if (descriptor.getType() == MethodDescriptor.MethodType.CLIENT_STREAMING) {
+            return ClientCalls.asyncClientStreamingCall(call, responseObserver);
+        } else if (descriptor.getType() == MethodDescriptor.MethodType.BIDI_STREAMING) {
+            return ClientCalls.asyncBidiStreamingCall(call, responseObserver);
+        } else {
+            throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
         }
     }
 
