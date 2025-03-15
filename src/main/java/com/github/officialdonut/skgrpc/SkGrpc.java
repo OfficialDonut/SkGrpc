@@ -23,7 +23,9 @@ public class SkGrpc extends JavaPlugin {
         rpcManager.loadDescriptors();
 
         try {
-            Skript.registerAddon(this).loadClasses("com.github.officialdonut.skgrpc" , "elements", "events");
+            Skript.registerAddon(this)
+                    .setLanguageFileDirectory("lang")
+                    .loadClasses("com.github.officialdonut.skgrpc" , "elements", "events");
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, "Failed to register Skript elements", e);
         }

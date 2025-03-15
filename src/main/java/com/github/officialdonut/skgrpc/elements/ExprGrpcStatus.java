@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 public class ExprGrpcStatus extends SimpleExpression<Status> {
 
     static {
-        Skript.registerExpression(ExprGrpcStatus.class, Status.class, ExpressionType.COMBINED, "[g]rpc status %grpcstatuscode% [desc:with description %string%]");
+        Skript.registerExpression(ExprGrpcStatus.class, Status.class, ExpressionType.COMBINED, "[g]rpc status %grpcstatuscode% [desc:with description %-string%]");
     }
 
     private Expression<Status.Code> exprStatusCode;

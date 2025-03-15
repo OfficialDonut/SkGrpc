@@ -10,7 +10,9 @@ import io.grpc.Status;
 public class GrpcTypes {
 
     static {
-        Classes.registerClass(new EnumClassInfo<>(Status.Code.class, "grpcstatuscode", "gRPC Status Code"));
+        Classes.registerClass(new EnumClassInfo<>(Status.Code.class, "grpcstatuscode", "grpc status codes")
+                .name("gRPC Status Code")
+                .user("grpc ?status ?codes?"));
 
         Classes.registerClass(new ClassInfo<>(ManagedChannel.class, "grpcchannel")
                 .name("gRPC Channel")
