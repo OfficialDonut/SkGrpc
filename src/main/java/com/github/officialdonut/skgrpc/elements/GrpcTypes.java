@@ -4,6 +4,7 @@ import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.classes.EnumClassInfo;
 import ch.njol.skript.registrations.Classes;
 import com.github.officialdonut.skgrpc.StreamObserverWrapper;
+import io.grpc.ChannelCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 
@@ -25,5 +26,9 @@ public class GrpcTypes {
         Classes.registerClass(new ClassInfo<>(Status.class, "grpcstatus")
                 .name("gRPC Status")
                 .user("grpc ?statu(s|es)"));
+
+        Classes.registerClass(new ClassInfo<>(ChannelCredentials.class, "grpcchannelcredentials")
+                .name("gRPC Channel Credentials")
+                .user("grpc ?channel ?credentials"));
     }
 }

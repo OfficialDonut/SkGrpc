@@ -6,9 +6,7 @@ import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.doc.Name;
 import ch.njol.skript.lang.*;
 import ch.njol.util.Kleenean;
-import io.grpc.Grpc;
-import io.grpc.InsecureChannelCredentials;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.*;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 import org.skriptlang.skript.lang.entry.EntryContainer;
@@ -25,6 +23,7 @@ public class SecNewChannel extends Section {
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("host", null, false, String.class))
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
+                .addEntryData(new ExpressionEntryData<>("credentials", null, true, ChannelCredentials.class))
                 .build();
     }
 
@@ -33,6 +32,7 @@ public class SecNewChannel extends Section {
     private Variable<?> variable;
     private Expression<String> exprHost;
     private Expression<Number> exprPort;
+    private Expression<ChannelCredentials> exprCredentials;
 
     @Override
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
@@ -42,6 +42,7 @@ public class SecNewChannel extends Section {
         }
         exprHost = entryContainer.get("host", Expression.class, false);
         exprPort = entryContainer.get("port", Expression.class, false);
+        exprCredentials = entryContainer.getOptional("credentials", Expression.class, false);
 
         if (expressions[0] instanceof Variable<?> v) {
             variable = v;
@@ -54,8 +55,13 @@ public class SecNewChannel extends Section {
 
     @Override
     protected @Nullable TriggerItem walk(Event event) {
-        ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(exprHost.getSingle(event), exprPort.getSingle(event).intValue(), InsecureChannelCredentials.create());
-        variable.change(event, new Object[]{builder.build()}, Changer.ChangeMode.SET);
+        String host = exprHost.getSingle(event);
+        Number port = exprPort.getSingle(event);
+        if (host != null && port != null) {
+            ChannelCredentials credentials = exprCredentials != null ? exprCredentials.getOptionalSingle(event).orElse(TlsChannelCredentials.create()) : TlsChannelCredentials.create();
+            ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(host, port.intValue(), credentials);
+            variable.change(event, new Object[]{builder.build()}, Changer.ChangeMode.SET);
+        }
         return super.walk(event, false);
     }
 
