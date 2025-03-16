@@ -30,6 +30,10 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.processResources {
+    expand("version" to project.version)
+}
+
 tasks.shadowJar {
     mergeServiceFiles()
 }

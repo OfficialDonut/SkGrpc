@@ -1,4 +1,4 @@
-package com.github.officialdonut.skgrpc.elements;
+package com.github.officialdonut.skgrpc.elements.client;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Name;
@@ -7,16 +7,17 @@ import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
-import io.grpc.ChannelCredentials;
-import io.grpc.InsecureChannelCredentials;
+import com.github.officialdonut.skgrpc.impl.SynchronizedStreamObserver;
+import io.grpc.stub.StreamObserver;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
-@Name("Insecure gRPC Channel Credentials")
-public class ExprInsecureChannelCredentials extends SimpleExpression<ChannelCredentials> {
+@Name("New gRPC Request Stream")
+@SuppressWarnings("rawtypes")
+public class ExprNewRequestStream extends SimpleExpression<StreamObserver> {
 
     static {
-        Skript.registerExpression(ExprInsecureChannelCredentials.class, ChannelCredentials.class, ExpressionType.SIMPLE, "insecure [g]rpc channel credentials");
+        Skript.registerExpression(ExprNewRequestStream.class, StreamObserver.class, ExpressionType.SIMPLE, "[new] [g]rpc request stream");
     }
 
     @Override
@@ -25,8 +26,8 @@ public class ExprInsecureChannelCredentials extends SimpleExpression<ChannelCred
     }
 
     @Override
-    protected @Nullable ChannelCredentials[] get(Event event) {
-        return new ChannelCredentials[]{InsecureChannelCredentials.create()};
+    protected @Nullable StreamObserver[] get(Event event) {
+        return new StreamObserver[]{new SynchronizedStreamObserver()};
     }
 
     @Override
@@ -35,12 +36,12 @@ public class ExprInsecureChannelCredentials extends SimpleExpression<ChannelCred
     }
 
     @Override
-    public Class<? extends ChannelCredentials> getReturnType() {
-        return ChannelCredentials.class;
+    public Class<? extends StreamObserver> getReturnType() {
+        return StreamObserver.class;
     }
 
     @Override
     public String toString(@Nullable Event event, boolean b) {
-        return "insecure gRPC channel credentials";
+        return "new gRPC request stream";
     }
 }

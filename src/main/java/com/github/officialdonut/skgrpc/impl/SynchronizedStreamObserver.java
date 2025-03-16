@@ -1,11 +1,17 @@
-package com.github.officialdonut.skgrpc;
+package com.github.officialdonut.skgrpc.impl;
 
 import com.google.protobuf.Message;
 import io.grpc.stub.StreamObserver;
 
-public class StreamObserverWrapper implements StreamObserver<Message> {
+public class SynchronizedStreamObserver implements StreamObserver<Message> {
 
     private StreamObserver<Message> delegate;
+
+    public SynchronizedStreamObserver() {}
+
+    public SynchronizedStreamObserver(StreamObserver<Message> delegate) {
+        this.delegate = delegate;
+    }
 
     @Override
     public synchronized void onNext(Message message) {

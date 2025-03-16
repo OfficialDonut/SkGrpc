@@ -1,4 +1,4 @@
-package com.github.officialdonut.skgrpc.elements;
+package com.github.officialdonut.skgrpc.elements.server;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Name;
@@ -6,36 +6,37 @@ import ch.njol.skript.lang.Effect;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.util.Kleenean;
-import io.grpc.ManagedChannel;
+import com.github.officialdonut.skgrpc.SkGrpc;
+import io.grpc.Server;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
-@Name("Shutdown gRPC Channel")
-public class EffShutdownChannel extends Effect {
+@Name("Shutdown gRPC Server")
+public class EffShutdownServer extends Effect {
 
     static {
-        Skript.registerEffect(EffShutdownChannel.class, "(shutdown|close) [g]rpc channel %grpcchannel%");
+        Skript.registerEffect(EffShutdownServer.class, "(shutdown|close) [g]rpc server %grpcserver%");
     }
 
-    private Expression<ManagedChannel> exprChannel;
+    private Expression<Server> exprServer;
 
     @Override
     @SuppressWarnings("unchecked")
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult) {
-        exprChannel = (Expression<ManagedChannel>) expressions[0];
+        exprServer = (Expression<Server>) expressions[0];
         return true;
     }
 
     @Override
     protected void execute(Event event) {
-        ManagedChannel channel = exprChannel.getSingle(event);
-        if (channel != null) {
-            channel.shutdownNow();
+        Server server = exprServer.getSingle(event);
+        if (server != null) {
+            SkGrpc.getInstance().getRpcManager().shutdownServer(server);
         }
     }
 
     @Override
     public String toString(@Nullable Event event, boolean b) {
-        return "shutdown gRPC channel " + exprChannel.toString(event, b);
+        return "shutdown gRPC server " + exprServer.toString(event, b);
     }
 }

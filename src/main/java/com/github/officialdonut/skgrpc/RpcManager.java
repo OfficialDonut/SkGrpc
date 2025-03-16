@@ -1,41 +1,50 @@
 package com.github.officialdonut.skgrpc;
 
+import com.github.officialdonut.skgrpc.impl.ClientRpc;
+import com.github.officialdonut.skgrpc.impl.RpcHandler;
 import com.github.officialdonut.skprotobuf.ProtoManager;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.MethodDescriptor;
+import io.grpc.*;
 import io.grpc.protobuf.ProtoUtils;
-import io.grpc.stub.ClientCalls;
-import io.grpc.stub.StreamObserver;
+import io.grpc.stub.ServerCalls;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class RpcManager {
 
-    private Map<String, MethodDescriptor<Message, Message>> rpcDescriptors;
+    private final Table<Server, MethodDescriptor<Message, Message>, RpcHandler> rpcHandlers;
     private final ProtoManager protoManager;
+
+    private Map<String, ServiceDescriptor> serviceDescriptors;
+    private Map<String, ClientRpc> clientRpcs;
 
     public RpcManager(ProtoManager protoManager) {
         this.protoManager = protoManager;
+        this.rpcHandlers = HashBasedTable.create();
     }
 
     public void loadDescriptors() {
-        rpcDescriptors = new HashMap<>();
+        serviceDescriptors = new HashMap<>();
+        clientRpcs = new HashMap<>();
         for (Descriptors.FileDescriptor fileDescriptor : protoManager.getFileDescriptors()) {
             for (Descriptors.ServiceDescriptor serviceDescriptor : fileDescriptor.getServices()) {
+                ServiceDescriptor.Builder builder = ServiceDescriptor.newBuilder(serviceDescriptor.getFullName());
                 for (Descriptors.MethodDescriptor methodDescriptor : serviceDescriptor.getMethods()) {
-                    MethodDescriptor<Message, Message> descriptor = createDescriptor(methodDescriptor);
-                    rpcDescriptors.put(methodDescriptor.getFullName(), descriptor);
-                    rpcDescriptors.putIfAbsent(methodDescriptor.getName(), descriptor);
+                    ClientRpc rpc = new ClientRpc(createDescriptor(methodDescriptor));
+                    clientRpcs.put(methodDescriptor.getFullName(), rpc);
+                    clientRpcs.putIfAbsent(methodDescriptor.getName(), rpc);
+                    builder.addMethod(rpc.getDescriptor());
                 }
+                ServiceDescriptor descriptor = builder.build();
+                serviceDescriptors.put(serviceDescriptor.getFullName(), descriptor);
+                serviceDescriptors.putIfAbsent(serviceDescriptor.getName(), descriptor);
             }
         }
     }
@@ -58,41 +67,43 @@ public class RpcManager {
                 .build();
     }
 
-    public Message[] invokeRpc(Channel channel, MethodDescriptor<Message, Message> descriptor, Message request) {
-        if (descriptor.getType() == MethodDescriptor.MethodType.UNARY) {
-            return new Message[]{ClientCalls.blockingUnaryCall(channel, descriptor, CallOptions.DEFAULT, request)};
-        } else if (descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
-            List<Message> responses = new ArrayList<>();
-            ClientCalls.blockingServerStreamingCall(channel, descriptor, CallOptions.DEFAULT, request).forEachRemaining(responses::add);
-            return responses.toArray(Message[]::new);
-        } else {
-            throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Server createServer(ServerBuilder<?> builder, List<ServiceDescriptor> services) {
+        Map<MethodDescriptor<Message, Message>, RpcHandler> handlers = new HashMap<>();
+        for (ServiceDescriptor service : services) {
+            ServerServiceDefinition.Builder definition = ServerServiceDefinition.builder(service);
+            for (MethodDescriptor method : service.getMethods()) {
+                RpcHandler handler = new RpcHandler(method);
+                handlers.put(method, handler);
+                definition.addMethod(ServerMethodDefinition.create(method, switch (method.getType()) {
+                    case UNARY -> ServerCalls.asyncUnaryCall(handler);
+                    case CLIENT_STREAMING -> ServerCalls.asyncClientStreamingCall(handler);
+                    case SERVER_STREAMING -> ServerCalls.asyncServerStreamingCall(handler);
+                    case BIDI_STREAMING -> ServerCalls.asyncBidiStreamingCall(handler);
+                    case UNKNOWN -> throw new IllegalStateException("Unknown RPC method type");
+                }));
+            }
+            builder.addService(definition.build());
         }
+        Server server = builder.build();
+        rpcHandlers.row(server).putAll(handlers);
+        return server;
     }
 
-    public void invokeRpc(Channel channel, MethodDescriptor<Message, Message> descriptor, Message request, StreamObserver<Message> responseObserver) {
-        ClientCall<Message, Message> call = channel.newCall(descriptor, CallOptions.DEFAULT);
-        if (descriptor.getType() == MethodDescriptor.MethodType.UNARY) {
-            ClientCalls.asyncUnaryCall(call, request, responseObserver);
-        } else if (descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
-            ClientCalls.asyncServerStreamingCall(call, request, responseObserver);
-        } else {
-            throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
-        }
+    public void shutdownServer(Server server) {
+        rpcHandlers.row(server).clear();
+        server.shutdownNow();
     }
 
-    public StreamObserver<Message> invokeRpc(Channel channel, MethodDescriptor<Message, Message> descriptor, StreamObserver<Message> responseObserver) {
-        ClientCall<Message, Message> call = channel.newCall(descriptor, CallOptions.DEFAULT);
-        if (descriptor.getType() == MethodDescriptor.MethodType.CLIENT_STREAMING) {
-            return ClientCalls.asyncClientStreamingCall(call, responseObserver);
-        } else if (descriptor.getType() == MethodDescriptor.MethodType.BIDI_STREAMING) {
-            return ClientCalls.asyncBidiStreamingCall(call, responseObserver);
-        } else {
-            throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
-        }
+    public ServiceDescriptor getServiceDescriptor(String serviceName) {
+        return serviceDescriptors.get(serviceName);
     }
 
-    public MethodDescriptor<Message, Message> getRpcDescriptor(String name) {
-        return rpcDescriptors.get(name);
+    public RpcHandler getRpcHandler(Server server, MethodDescriptor<Message, Message> descriptor) {
+        return rpcHandlers.get(server, descriptor);
+    }
+
+    public ClientRpc getClientRpc(String rpcName) {
+        return clientRpcs.get(rpcName);
     }
 }

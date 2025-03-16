@@ -3,7 +3,7 @@ package com.github.officialdonut.skgrpc.events;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public class GrpcOnCompletedEvent extends Event {
+public class GrpcReadyEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
 

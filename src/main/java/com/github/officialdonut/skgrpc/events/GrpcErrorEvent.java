@@ -5,16 +5,16 @@ import io.grpc.Status;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public class GrpcOnErrorEvent extends Event {
+public class GrpcErrorEvent extends Event {
 
     static {
-        EventValues.registerEventValue(GrpcOnErrorEvent.class, Status.class, GrpcOnErrorEvent::getStatus);
+        EventValues.registerEventValue(GrpcErrorEvent.class, Status.class, GrpcErrorEvent::getStatus);
     }
 
     private static final HandlerList HANDLERS = new HandlerList();
     private final Status status;
 
-    public GrpcOnErrorEvent(Throwable throwable) {
+    public GrpcErrorEvent(Throwable throwable) {
         status = Status.fromThrowable(throwable);
     }
 

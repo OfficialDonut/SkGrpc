@@ -6,25 +6,26 @@ import ch.njol.skript.lang.Effect;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.util.Kleenean;
-import com.github.officialdonut.skgrpc.StreamObserverWrapper;
+import com.google.protobuf.Message;
 import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
-@Name("Complete gRPC Request Stream")
-public class EffCompleteRequestStream extends Effect {
+@Name("Complete gRPC Stream")
+public class EffCompleteStream extends Effect {
 
     static {
-        Skript.registerEffect(EffCompleteRequestStream.class, "(complete|close) [g]rpc [request] stream %grpcrequeststream% [error:with error %-grpcstatus%]");
+        Skript.registerEffect(EffCompleteStream.class, "(complete|close) [g]rpc stream %grpcstream% [error:with error %-grpcstatus%]");
     }
 
-    private Expression<StreamObserverWrapper> exprRequestStream;
+    private Expression<StreamObserver<Message>> exprStream;
     private Expression<Status> exprError;
 
     @Override
     @SuppressWarnings("unchecked")
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult) {
-        exprRequestStream = (Expression<StreamObserverWrapper>) expressions[0];
+        exprStream = (Expression<StreamObserver<Message>>) expressions[0];
         if (parseResult.hasTag("error")) {
             exprError = (Expression<Status>) expressions[1];
         }
@@ -33,19 +34,19 @@ public class EffCompleteRequestStream extends Effect {
 
     @Override
     protected void execute(Event event) {
-        StreamObserverWrapper requestStream = exprRequestStream.getSingle(event);
-        if (requestStream != null) {
+        StreamObserver<Message> stream = exprStream.getSingle(event);
+        if (stream != null) {
             if (exprError != null) {
                 Status status = exprError.getSingle(event);
-                requestStream.onError(status != null ? status.asException() : Status.INTERNAL.asException());
+                stream.onError(status != null ? status.asRuntimeException() : Status.INTERNAL.asRuntimeException());
             } else {
-                requestStream.onCompleted();
+                stream.onCompleted();
             }
         }
     }
 
     @Override
     public String toString(@Nullable Event event, boolean b) {
-        return "complete gRPC request stream " + exprRequestStream.toString(event, b) + (exprError != null ? (" with error " + exprError.toString(event, b)) : "");
+        return "complete gRPC stream " + exprStream.toString(event, b) + (exprError != null ? (" with error " + exprError.toString(event, b)) : "");
     }
 }

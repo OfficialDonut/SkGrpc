@@ -1,4 +1,4 @@
-package com.github.officialdonut.skgrpc.elements;
+package com.github.officialdonut.skgrpc.elements.client;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Name;

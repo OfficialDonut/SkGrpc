@@ -1,4 +1,4 @@
-package com.github.officialdonut.skgrpc.elements;
+package com.github.officialdonut.skgrpc.elements.client;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.classes.Changer;
@@ -19,7 +19,7 @@ import java.util.List;
 public class SecNewChannel extends Section {
 
     static {
-        Skript.registerSection(SecNewChannel.class, "[open] [new] [g]rpc channel %object%");
+        Skript.registerSection(SecNewChannel.class, "[new] [g]rpc channel %object%");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("host", null, false, String.class))
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
@@ -40,6 +40,7 @@ public class SecNewChannel extends Section {
         if (entryContainer == null) {
             return false;
         }
+
         exprHost = entryContainer.get("host", Expression.class, false);
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.getOptional("credentials", Expression.class, false);
