@@ -24,6 +24,7 @@ public class SecNewServer extends Section {
         Skript.registerSection(SecNewServer.class, "[new] [g]rpc server %object% with services %*strings%");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
+                .addEntryData(new ExpressionEntryData<>("credentials", null, false, ServerCredentials.class))
                 .build();
     }
 
@@ -31,6 +32,7 @@ public class SecNewServer extends Section {
 
     private Variable<?> variable;
     private Expression<Number> exprPort;
+    private Expression<ServerCredentials> exprCredentials;
     private List<ServiceDescriptor> services;
 
     @Override
@@ -41,6 +43,7 @@ public class SecNewServer extends Section {
             return false;
         }
         exprPort = entryContainer.get("port", Expression.class, false);
+        exprCredentials = entryContainer.get("credentials", Expression.class, false);
 
         services = new ArrayList<>();
         Literal<String> serviceNames = (Literal<String>) expressions[1];
@@ -65,8 +68,9 @@ public class SecNewServer extends Section {
     @Override
     protected @Nullable TriggerItem walk(Event event) {
         Number port = exprPort.getSingle(event);
-        if (port != null) {
-            ServerBuilder<?> builder = Grpc.newServerBuilderForPort(port.intValue(), InsecureServerCredentials.create());
+        ServerCredentials credentials = exprCredentials.getSingle(event);
+        if (port != null && credentials != null) {
+            ServerBuilder<?> builder = Grpc.newServerBuilderForPort(port.intValue(), credentials);
             Server server = SkGrpc.getInstance().getRpcManager().createServer(builder, services);
             variable.change(event, new Object[]{server}, Changer.ChangeMode.SET);
         }
