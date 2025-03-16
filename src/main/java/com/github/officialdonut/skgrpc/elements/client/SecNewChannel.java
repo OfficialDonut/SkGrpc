@@ -24,6 +24,8 @@ public class SecNewChannel extends Section {
                 .addEntryData(new ExpressionEntryData<>("host", null, false, String.class))
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
                 .addEntryData(new ExpressionEntryData<>("credentials", null, true, ChannelCredentials.class))
+                .addEntryData(new ExpressionEntryData<>("max inbound message size", null, true, Number.class))
+                .addEntryData(new ExpressionEntryData<>("max inbound metadata size", null, true, Number.class))
                 .build();
     }
 
@@ -33,6 +35,8 @@ public class SecNewChannel extends Section {
     private Expression<String> exprHost;
     private Expression<Number> exprPort;
     private Expression<ChannelCredentials> exprCredentials;
+    private Expression<Number> exprMaxInnboundMessageSize;
+    private Expression<Number> exprMaxInnboundMetadataSize;
 
     @Override
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
@@ -44,6 +48,8 @@ public class SecNewChannel extends Section {
         exprHost = entryContainer.get("host", Expression.class, false);
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.getOptional("credentials", Expression.class, false);
+        exprMaxInnboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
+        exprMaxInnboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
 
         if (expressions[0] instanceof Variable<?> v) {
             variable = v;
@@ -61,6 +67,12 @@ public class SecNewChannel extends Section {
         if (host != null && port != null) {
             ChannelCredentials credentials = exprCredentials != null ? exprCredentials.getOptionalSingle(event).orElse(TlsChannelCredentials.create()) : TlsChannelCredentials.create();
             ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(host, port.intValue(), credentials);
+            if (exprMaxInnboundMessageSize != null) {
+                exprMaxInnboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
+            }
+            if (exprMaxInnboundMetadataSize != null) {
+                exprMaxInnboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
+            }
             variable.change(event, new Object[]{builder.build()}, Changer.ChangeMode.SET);
         }
         return super.walk(event, false);

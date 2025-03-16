@@ -25,15 +25,20 @@ public class SecNewServer extends Section {
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
                 .addEntryData(new ExpressionEntryData<>("credentials", null, false, ServerCredentials.class))
+                .addEntryData(new ExpressionEntryData<>("max inbound message size", null, true, Number.class))
+                .addEntryData(new ExpressionEntryData<>("max inbound metadata size", null, true, Number.class))
                 .build();
     }
 
     private static final EntryValidator entryValidator;
 
     private Variable<?> variable;
+    private List<ServiceDescriptor> services;
+
     private Expression<Number> exprPort;
     private Expression<ServerCredentials> exprCredentials;
-    private List<ServiceDescriptor> services;
+    private Expression<Number> exprMaxInnboundMessageSize;
+    private Expression<Number> exprMaxInnboundMetadataSize;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -42,8 +47,11 @@ public class SecNewServer extends Section {
         if (entryContainer == null) {
             return false;
         }
+
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.get("credentials", Expression.class, false);
+        exprMaxInnboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
+        exprMaxInnboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
 
         services = new ArrayList<>();
         Literal<String> serviceNames = (Literal<String>) expressions[1];
@@ -62,6 +70,7 @@ public class SecNewServer extends Section {
             Skript.error("Object expression must be a variable.");
             return false;
         }
+
         return true;
     }
 
@@ -71,6 +80,12 @@ public class SecNewServer extends Section {
         ServerCredentials credentials = exprCredentials.getSingle(event);
         if (port != null && credentials != null) {
             ServerBuilder<?> builder = Grpc.newServerBuilderForPort(port.intValue(), credentials);
+            if (exprMaxInnboundMessageSize != null) {
+                exprMaxInnboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
+            }
+            if (exprMaxInnboundMetadataSize != null) {
+                exprMaxInnboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
+            }
             Server server = SkGrpc.getInstance().getRpcManager().createServer(builder, services);
             variable.change(event, new Object[]{server}, Changer.ChangeMode.SET);
         }
