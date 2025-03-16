@@ -16,11 +16,12 @@ import org.jetbrains.annotations.Nullable;
 public class ExprInsecureServerCredentials extends SimpleExpression<ServerCredentials> {
 
     static {
-        Skript.registerExpression(ExprInsecureServerCredentials.class, ServerCredentials.class, ExpressionType.SIMPLE, "insecure [g]rpc server credentials");
+        Skript.registerExpression(ExprInsecureServerCredentials.class, ServerCredentials.class, ExpressionType.SIMPLE, "insecure [[g]rpc] server credentials");
     }
 
     @Override
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult) {
+        Skript.warning("Insecure gRPC server credentials should only be used for local testing.");
         return true;
     }
 

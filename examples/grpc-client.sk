@@ -1,0 +1,43 @@
+on load:
+    if {channel} is set:
+        shutdown grpc channel {channel}
+
+    set {_creds} to insecure channel credentials
+    grpc channel {channel}:
+        host: "localhost"
+        port: 60123
+        credentials: {_creds}
+
+command /grpcecho <string>:
+    trigger:
+        # build request
+        set {_builder} to new builder for proto "EchoRequest"
+        set proto field "message" in {_builder} to arg-1
+        set {_request} to proto from builder {_builder}
+
+        # send request
+        set {_response} to response of rpc "Echo" for {_request} using {channel}
+        send "Client received response message: %value of proto field "message" in {_response}%"
+
+command /grpcechostream <string>:
+    trigger:
+        # start async rpc
+        set {_sender} to command sender
+        set {_stream} to new rpc request stream
+        async rpc "EchoStream" for request stream {_stream} using {channel}:
+            on next:
+                set {_message} to value of proto field "message" in event-protobufmessage
+                send "Client received response message: %{_message}%" to {_sender}
+            on error:
+                send "Client received error: %event-grpcstatus's code% - %event-grpcstatus's description%" to {_sender}
+            on complete:
+                send "Client finished receiving responses." to {_sender}
+
+        # send requests
+        loop arg-1 split at " ":
+            set {_builder} to new builder for proto "EchoRequest"
+            set proto field "message" in {_builder} to loop-value
+            send proto from builder {_builder} on rpc stream {_stream}
+
+        # tell the server we're done sending requests
+        complete rpc stream {_stream}

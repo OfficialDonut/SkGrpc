@@ -16,11 +16,12 @@ import org.jetbrains.annotations.Nullable;
 public class ExprInsecureChannelCredentials extends SimpleExpression<ChannelCredentials> {
 
     static {
-        Skript.registerExpression(ExprInsecureChannelCredentials.class, ChannelCredentials.class, ExpressionType.SIMPLE, "insecure [g]rpc channel credentials");
+        Skript.registerExpression(ExprInsecureChannelCredentials.class, ChannelCredentials.class, ExpressionType.SIMPLE, "insecure [[g]rpc] channel credentials");
     }
 
     @Override
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult) {
+        Skript.warning("Insecure gRPC channel credentials should only be used for local testing.");
         return true;
     }
 

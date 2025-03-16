@@ -21,7 +21,7 @@ import java.util.List;
 public class SecNewServer extends Section {
 
     static {
-        Skript.registerSection(SecNewServer.class, "[new] [g]rpc server %object% with services %*strings%");
+        Skript.registerSection(SecNewServer.class, "[new] [g]rpc server %object% with service[s] %*strings%");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
                 .addEntryData(new ExpressionEntryData<>("credentials", null, false, ServerCredentials.class))

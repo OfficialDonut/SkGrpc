@@ -1,0 +1,43 @@
+on load:
+    if {server} is set:
+        shutdown grpc server {server}
+
+    set {_creds} to insecure server credentials
+    grpc server {server} with services "EchoService":
+        port: 60123
+        credentials: {_creds}
+
+    setupEchoHandler({server})
+    setupEchoStreamHandler({server})
+    start grpc server {server}
+
+function setupEchoHandler(server: grpcserver):
+    rpc "Echo" handler for {_server}:
+        response:
+            set {_message} to value of proto field "message" in event-protobufmessage
+            broadcast "Server received request message: %{_message}%"
+
+            # send response
+            set {_response} to new builder for proto "EchoResponse"
+            set proto field "message" in {_response} to {_message}
+            return rpc response proto from builder {_response}
+
+function setupEchoStreamHandler(server: grpcserver):
+    rpc "EchoStream" handler for {_server}:
+        on connect:
+            # store the stream for sending responses
+            set {_stream} to event-grpcstream
+        on next:
+            set {_message} to value of proto field "message" in event-protobufmessage
+            broadcast "Server received request message: %{_message}%"
+
+            # send response
+            set {_response} to new builder for proto "EchoResponse"
+            set proto field "message" in {_response} to {_message}
+            send proto from builder {_response} on rpc stream {_stream}
+        on error:
+            broadcast "Server received error: %event-grpcstatus's code% - %event-grpcstatus's description%"
+        on complete:
+            broadcast "Server finished receiving requests."
+            # tell the client we're done sending responses
+            complete rpc stream {_stream}

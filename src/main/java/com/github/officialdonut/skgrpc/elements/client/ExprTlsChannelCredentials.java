@@ -21,7 +21,7 @@ import java.util.logging.Level;
 public class ExprTlsChannelCredentials extends SimpleExpression<ChannelCredentials> {
 
     static {
-        Skript.registerExpression(ExprTlsChannelCredentials.class, ChannelCredentials.class, ExpressionType.COMBINED, "(tls|ssl) [g]rpc channel credentials [cert:trusting [root] cert[ificate] %-string%]");
+        Skript.registerExpression(ExprTlsChannelCredentials.class, ChannelCredentials.class, ExpressionType.COMBINED, "(tls|ssl) [[g]rpc] channel credentials [cert:trusting [root] cert[ificate] %-string%]");
     }
 
     private Expression<String> exprRootCert;

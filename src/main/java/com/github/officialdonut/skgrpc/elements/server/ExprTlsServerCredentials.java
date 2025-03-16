@@ -21,7 +21,7 @@ import java.util.logging.Level;
 public class ExprTlsServerCredentials extends SimpleExpression<ServerCredentials> {
 
     static {
-        Skript.registerExpression(ExprTlsServerCredentials.class, ServerCredentials.class, ExpressionType.COMBINED, "(tls|ssl) [g]rpc server credentials using cert[ificate] [chain] %string% [and] [private] key %string%");
+        Skript.registerExpression(ExprTlsServerCredentials.class, ServerCredentials.class, ExpressionType.COMBINED, "(tls|ssl) [[g]rpc] server credentials using cert[ificate] [chain] %string% [and] [private] key %string%");
     }
 
     private Expression<String> exprCert;
