@@ -1,9 +1,9 @@
 package com.github.officialdonut.skgrpc.elements.server;
 
 import ch.njol.skript.Skript;
-import ch.njol.skript.classes.Changer;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.doc.Name;
+import ch.njol.skript.expressions.base.SectionExpression;
 import ch.njol.skript.lang.*;
 import ch.njol.util.Kleenean;
 import com.github.officialdonut.skgrpc.SkGrpc;
@@ -18,10 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Name("New gRPC Server")
-public class SecNewServer extends Section {
+public class ExprNewServer extends SectionExpression<Server> {
 
     static {
-        Skript.registerSection(SecNewServer.class, "[new] [g]rpc server %object% with service[s] %*strings%");
+        Skript.registerExpression(ExprNewServer.class, Server.class, ExpressionType.COMBINED, "[new] [g]rpc server with service[s] %*strings%");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
                 .addEntryData(new ExpressionEntryData<>("credentials", null, false, ServerCredentials.class))
@@ -32,9 +32,7 @@ public class SecNewServer extends Section {
 
     private static final EntryValidator entryValidator;
 
-    private Variable<?> variable;
     private List<ServiceDescriptor> services;
-
     private Expression<Number> exprPort;
     private Expression<ServerCredentials> exprCredentials;
     private Expression<Number> exprMaxInnboundMessageSize;
@@ -43,6 +41,10 @@ public class SecNewServer extends Section {
     @Override
     @SuppressWarnings("unchecked")
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
+        if (sectionNode == null) {
+            Skript.error("Missing required section entries.");
+            return false;
+        }
         EntryContainer entryContainer = entryValidator.validate(sectionNode);
         if (entryContainer == null) {
             return false;
@@ -54,7 +56,7 @@ public class SecNewServer extends Section {
         exprMaxInnboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
 
         services = new ArrayList<>();
-        Literal<String> serviceNames = (Literal<String>) expressions[1];
+        Literal<String> serviceNames = (Literal<String>) expressions[0];
         for (String serviceName : serviceNames.getArray()) {
             ServiceDescriptor descriptor = SkGrpc.getInstance().getRpcManager().getServiceDescriptor(serviceName);
             if (descriptor != null) {
@@ -63,19 +65,11 @@ public class SecNewServer extends Section {
                 Skript.error("Failed to find service: " + serviceName);
             }
         }
-
-        if (expressions[0] instanceof Variable<?> v) {
-            variable = v;
-        } else {
-            Skript.error("Object expression must be a variable.");
-            return false;
-        }
-
         return true;
     }
 
     @Override
-    protected @Nullable TriggerItem walk(Event event) {
+    protected @Nullable Server[] get(Event event) {
         Number port = exprPort.getSingle(event);
         ServerCredentials credentials = exprCredentials.getSingle(event);
         if (port != null && credentials != null) {
@@ -87,13 +81,23 @@ public class SecNewServer extends Section {
                 exprMaxInnboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
             }
             Server server = SkGrpc.getInstance().getRpcManager().createServer(builder, services);
-            variable.change(event, new Object[]{server}, Changer.ChangeMode.SET);
+            return new Server[]{server};
         }
-        return super.walk(event, false);
+        return null;
+    }
+
+    @Override
+    public boolean isSingle() {
+        return true;
+    }
+
+    @Override
+    public Class<? extends Server> getReturnType() {
+        return Server.class;
     }
 
     @Override
     public String toString(@Nullable Event event, boolean b) {
-        return "new gRPC server";
+        return "new gRPC server with services " + services;
     }
 }

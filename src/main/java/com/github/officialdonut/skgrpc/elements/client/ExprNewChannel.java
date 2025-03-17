@@ -1,9 +1,9 @@
 package com.github.officialdonut.skgrpc.elements.client;
 
 import ch.njol.skript.Skript;
-import ch.njol.skript.classes.Changer;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.doc.Name;
+import ch.njol.skript.expressions.base.SectionExpression;
 import ch.njol.skript.lang.*;
 import ch.njol.util.Kleenean;
 import io.grpc.*;
@@ -16,10 +16,10 @@ import org.skriptlang.skript.lang.entry.util.ExpressionEntryData;
 import java.util.List;
 
 @Name("New gRPC Channel")
-public class SecNewChannel extends Section {
+public class ExprNewChannel extends SectionExpression<ManagedChannel> {
 
     static {
-        Skript.registerSection(SecNewChannel.class, "[new] [g]rpc channel %object%");
+        Skript.registerExpression(ExprNewChannel.class, ManagedChannel.class, ExpressionType.SIMPLE, "[new] [g]rpc channel");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("host", null, false, String.class))
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
@@ -31,7 +31,6 @@ public class SecNewChannel extends Section {
 
     private static final EntryValidator entryValidator;
 
-    private Variable<?> variable;
     private Expression<String> exprHost;
     private Expression<Number> exprPort;
     private Expression<ChannelCredentials> exprCredentials;
@@ -40,28 +39,24 @@ public class SecNewChannel extends Section {
 
     @Override
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
+        if (sectionNode == null) {
+            Skript.error("Missing required section entries.");
+            return false;
+        }
         EntryContainer entryContainer = entryValidator.validate(sectionNode);
         if (entryContainer == null) {
             return false;
         }
-
         exprHost = entryContainer.get("host", Expression.class, false);
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.getOptional("credentials", Expression.class, false);
         exprMaxInnboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
         exprMaxInnboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
-
-        if (expressions[0] instanceof Variable<?> v) {
-            variable = v;
-        } else {
-            Skript.error("Object expression must be a variable.");
-            return false;
-        }
         return true;
     }
 
     @Override
-    protected @Nullable TriggerItem walk(Event event) {
+    protected @Nullable ManagedChannel[] get(Event event) {
         String host = exprHost.getSingle(event);
         Number port = exprPort.getSingle(event);
         if (host != null && port != null) {
@@ -73,9 +68,19 @@ public class SecNewChannel extends Section {
             if (exprMaxInnboundMetadataSize != null) {
                 exprMaxInnboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
             }
-            variable.change(event, new Object[]{builder.build()}, Changer.ChangeMode.SET);
+            return new ManagedChannel[]{builder.build()};
         }
-        return super.walk(event, false);
+        return null;
+    }
+
+    @Override
+    public boolean isSingle() {
+        return true;
+    }
+
+    @Override
+    public Class<? extends ManagedChannel> getReturnType() {
+        return ManagedChannel.class;
     }
 
     @Override
