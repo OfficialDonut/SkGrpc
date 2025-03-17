@@ -1,6 +1,8 @@
 # SkGrpc
 Skript addon that adds support for [gRPC](https://grpc.io/).
 
+[![SkriptHubViewTheDocs](http://skripthub.net/static/addon/ViewTheDocsButton.png)](http://skripthub.net/docs/?addon=SkGrpc)
+
 > [!IMPORTANT]
 > SkGrpc depends on [SkProtobuf](https://github.com/OfficialDonut/SkProtobuf). SkGrpc requires a descriptor set for the RPCs you wish to use with Skript, see SkProtobuf for more information about descriptor sets.
 
