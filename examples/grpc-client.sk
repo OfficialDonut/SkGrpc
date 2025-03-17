@@ -3,7 +3,7 @@ on load:
         shutdown grpc channel {channel}
 
     set {_creds} to insecure channel credentials
-    grpc channel {channel}:
+    set {channel} to new grpc channel:
         host: "localhost"
         port: 60123
         credentials: {_creds}
@@ -23,8 +23,7 @@ command /grpcechostream <string>:
     trigger:
         # start async rpc
         set {_sender} to command sender
-        set {_stream} to new rpc request stream
-        async rpc "EchoStream" for request stream {_stream} using {channel}:
+        set {_stream} to request stream for rpc "EchoStream" using {channel}:
             on next:
                 set {_message} to value of proto field "message" in event-protobufmessage
                 send "Client received response message: %{_message}%" to {_sender}

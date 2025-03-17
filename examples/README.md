@@ -11,4 +11,4 @@ protoc -odescriptors.dsc --include_imports echo.proto
 
 ### Commands
 - /grpcecho \<string>
-- /grpcechostream \<string>
+- /grpcechostream \<strings>

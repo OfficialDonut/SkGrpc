@@ -3,7 +3,7 @@ on load:
         shutdown grpc server {server}
 
     set {_creds} to insecure server credentials
-    grpc server {server} with services "EchoService":
+    set {server} to new grpc server with services "EchoService":
         port: 60123
         credentials: {_creds}
 
