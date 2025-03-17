@@ -34,7 +34,7 @@ public class ExprRpcResponse extends SimpleExpression<Message> {
         String rpcName = ((Literal<String>) expressions[0]).getSingle();
         rpc = SkGrpc.getInstance().getRpcManager().getClientRpc(rpcName);
         if (rpc == null) {
-            Skript.error("Failed to find RPC: " + rpcName);
+            Skript.error("Failed to find descriptor for RPC: " + rpcName);
             return false;
         }
         if (rpc.isClientStreaming()) {

@@ -69,7 +69,7 @@ public class SecRpcHandler extends Section {
         String rpcName = ((Literal<String>) expressions[0]).getSingle();
         rpc = SkGrpc.getInstance().getRpcManager().getClientRpc(rpcName);
         if (rpc == null) {
-            Skript.error("Failed to find RPC: " + rpcName);
+            Skript.error("Failed to find descriptor for RPC: " + rpcName);
             return false;
         }
         if (rpc.isClientStreaming() && responseTrigger != null) {
@@ -86,7 +86,7 @@ public class SecRpcHandler extends Section {
 
     private Trigger loadTrigger(EntryContainer entryContainer, String key, Class<? extends Event> event) {
         SectionNode sectionNode = entryContainer.getOptional(key, SectionNode.class, false);
-        return sectionNode != null ?  loadCode(sectionNode, key, event) : null;
+        return sectionNode != null ? loadCode(sectionNode, key, event) : null;
     }
 
     @Override
