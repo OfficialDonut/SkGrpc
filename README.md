@@ -6,6 +6,11 @@ Skript addon that adds support for [gRPC](https://grpc.io/).
 > [!IMPORTANT]
 > SkGrpc depends on [SkProtobuf](https://github.com/OfficialDonut/SkProtobuf). SkGrpc requires a descriptor set for the RPCs you wish to use with Skript, see SkProtobuf for more information about descriptor sets.
 
+## Commands
+| Command        | Permission   | Description         |
+|----------------|--------------|---------------------|
+| /skgrpc reload | skgrpc.admin | Reload descriptors. |
+
 ## Examples
 See full example files [here](examples).
 
