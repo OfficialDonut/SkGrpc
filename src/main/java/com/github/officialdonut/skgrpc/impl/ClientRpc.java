@@ -20,20 +20,20 @@ public class ClientRpc {
         this.descriptor = descriptor;
     }
 
-    public Message[] invoke(Channel channel, Message request) {
+    public Message[] invoke(Channel channel, Message request, CallOptions callOptions) {
         if (descriptor.getType() == MethodDescriptor.MethodType.UNARY) {
-            return new Message[]{ClientCalls.blockingUnaryCall(channel, descriptor, CallOptions.DEFAULT, request)};
+            return new Message[]{ClientCalls.blockingUnaryCall(channel, descriptor, callOptions, request)};
         } else if (descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
             List<Message> responses = new ArrayList<>();
-            ClientCalls.blockingServerStreamingCall(channel, descriptor, CallOptions.DEFAULT, request).forEachRemaining(responses::add);
+            ClientCalls.blockingServerStreamingCall(channel, descriptor, callOptions, request).forEachRemaining(responses::add);
             return responses.toArray(Message[]::new);
         } else {
             throw new IllegalStateException("Invalid descriptor type: " + descriptor.getType());
         }
     }
 
-    public void invoke(Channel channel, Message request, StreamObserver<Message> responseObserver) {
-        ClientCall<Message, Message> call = channel.newCall(descriptor, CallOptions.DEFAULT);
+    public void invoke(Channel channel, Message request, CallOptions callOptions, StreamObserver<Message> responseObserver) {
+        ClientCall<Message, Message> call = channel.newCall(descriptor, callOptions);
         if (descriptor.getType() == MethodDescriptor.MethodType.UNARY) {
             ClientCalls.asyncUnaryCall(call, request, responseObserver);
         } else if (descriptor.getType() == MethodDescriptor.MethodType.SERVER_STREAMING) {
@@ -43,8 +43,8 @@ public class ClientRpc {
         }
     }
 
-    public StreamObserver<Message> invoke(Channel channel, StreamObserver<Message> responseObserver) {
-        ClientCall<Message, Message> call = channel.newCall(descriptor, CallOptions.DEFAULT);
+    public StreamObserver<Message> invoke(Channel channel, CallOptions callOptions, StreamObserver<Message> responseObserver) {
+        ClientCall<Message, Message> call = channel.newCall(descriptor, callOptions);
         if (descriptor.getType() == MethodDescriptor.MethodType.CLIENT_STREAMING) {
             return ClientCalls.asyncClientStreamingCall(call, responseObserver);
         } else if (descriptor.getType() == MethodDescriptor.MethodType.BIDI_STREAMING) {

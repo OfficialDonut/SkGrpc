@@ -16,6 +16,7 @@ import com.github.officialdonut.skgrpc.impl.ClientRpc;
 import com.github.officialdonut.skgrpc.impl.SkriptStreamObserver;
 import com.github.officialdonut.skgrpc.impl.SynchronizedStreamObserver;
 import com.google.protobuf.Message;
+import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -31,7 +32,7 @@ import java.util.List;
 public class ExprAsyncRpcStream extends SectionExpression<StreamObserver> {
 
     static {
-        Skript.registerExpression(ExprAsyncRpcStream.class, StreamObserver.class, ExpressionType.COMBINED, "[async] [request] stream for [g]rpc %*string% using %grpcchannel%");
+        Skript.registerExpression(ExprAsyncRpcStream.class, StreamObserver.class, ExpressionType.COMBINED, "[async] [request] stream for [g]rpc %*string% using %grpcchannel% [with %-grpccalloptions%]");
 
         entryValidator = EntryValidator.builder()
                 .addSection("on next", true)
@@ -48,6 +49,7 @@ public class ExprAsyncRpcStream extends SectionExpression<StreamObserver> {
     private Trigger onCompleteTrigger;
     private Trigger onReadyTrigger;
     private Expression<Channel> exprChannel;
+    private Expression<CallOptions> exprCallOptions;
     private ClientRpc rpc;
 
     @Override
@@ -61,7 +63,9 @@ public class ExprAsyncRpcStream extends SectionExpression<StreamObserver> {
         onErrorTrigger = loadTrigger(entryContainer, "on error", GrpcErrorEvent.class);
         onCompleteTrigger = loadTrigger(entryContainer, "on complete", GrpcCompleteEvent.class);
         onReadyTrigger = loadTrigger(entryContainer, "on ready", GrpcReadyEvent.class);
+
         exprChannel = (Expression<Channel>) expressions[1];
+        exprCallOptions = (Expression<CallOptions>) expressions[2];
 
         String rpcName = ((Literal<String>) expressions[0]).getSingle();
         rpc = SkGrpc.getInstance().getRpcManager().getClientRpc(rpcName);
@@ -97,7 +101,8 @@ public class ExprAsyncRpcStream extends SectionExpression<StreamObserver> {
                 .localVars(Variables.copyLocalVariables(event))
                 .build();
 
-        ClientCallStreamObserver<Message> callStreamObserver = (ClientCallStreamObserver<Message>) rpc.invoke(channel, observer);
+        CallOptions callOptions = exprCallOptions != null ? exprCallOptions.getOptionalSingle(event).orElse(CallOptions.DEFAULT) : CallOptions.DEFAULT;
+        ClientCallStreamObserver<Message> callStreamObserver = (ClientCallStreamObserver<Message>) rpc.invoke(channel, callOptions, observer);
         if (observer.hasOnReady()) {
             callStreamObserver.setOnReadyHandler(observer::onReady);
         }

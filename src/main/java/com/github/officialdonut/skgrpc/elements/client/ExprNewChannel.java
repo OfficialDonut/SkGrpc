@@ -34,8 +34,8 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
     private Expression<String> exprHost;
     private Expression<Number> exprPort;
     private Expression<ChannelCredentials> exprCredentials;
-    private Expression<Number> exprMaxInnboundMessageSize;
-    private Expression<Number> exprMaxInnboundMetadataSize;
+    private Expression<Number> exprMaxInboundMessageSize;
+    private Expression<Number> exprMaxInboundMetadataSize;
 
     @Override
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult, SectionNode sectionNode, List<TriggerItem> list) {
@@ -50,8 +50,8 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
         exprHost = entryContainer.get("host", Expression.class, false);
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.getOptional("credentials", Expression.class, false);
-        exprMaxInnboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
-        exprMaxInnboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
+        exprMaxInboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
+        exprMaxInboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
         return true;
     }
 
@@ -62,11 +62,11 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
         if (host != null && port != null) {
             ChannelCredentials credentials = exprCredentials != null ? exprCredentials.getOptionalSingle(event).orElse(TlsChannelCredentials.create()) : TlsChannelCredentials.create();
             ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(host, port.intValue(), credentials);
-            if (exprMaxInnboundMessageSize != null) {
-                exprMaxInnboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
+            if (exprMaxInboundMessageSize != null) {
+                exprMaxInboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
             }
-            if (exprMaxInnboundMetadataSize != null) {
-                exprMaxInnboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
+            if (exprMaxInboundMetadataSize != null) {
+                exprMaxInboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
             }
             return new ManagedChannel[]{builder.build()};
         }

@@ -13,6 +13,7 @@ import com.github.officialdonut.skgrpc.events.GrpcCompleteEvent;
 import com.github.officialdonut.skgrpc.events.GrpcErrorEvent;
 import com.github.officialdonut.skgrpc.events.GrpcNextEvent;
 import com.google.protobuf.Message;
+import io.grpc.CallOptions;
 import io.grpc.Channel;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ import java.util.List;
 public class SecAsyncRpc extends Section {
 
     static {
-        Skript.registerSection(SecAsyncRpc.class, "[async] [g]rpc %*string% for [request] %protobufmessage% using %grpcchannel%");
+        Skript.registerSection(SecAsyncRpc.class, "[async] [g]rpc %*string% for [request] %protobufmessage% using %grpcchannel% [with %-grpccalloptions%]");
 
         entryValidator = EntryValidator.builder()
                 .addSection("on next", true)
@@ -41,6 +42,7 @@ public class SecAsyncRpc extends Section {
     private Trigger onCompleteTrigger;
     private Expression<Message> exprRequest;
     private Expression<Channel> exprChannel;
+    private Expression<CallOptions> exprCallOptions;
     private ClientRpc rpc;
 
     @Override
@@ -54,8 +56,10 @@ public class SecAsyncRpc extends Section {
         onNextTrigger = loadTrigger(entryContainer, "on next", GrpcNextEvent.class);
         onErrorTrigger = loadTrigger(entryContainer, "on error", GrpcErrorEvent.class);
         onCompleteTrigger = loadTrigger(entryContainer, "on complete", GrpcCompleteEvent.class);
+
         exprRequest = (Expression<Message>) expressions[1];
         exprChannel = (Expression<Channel>) expressions[2];
+        exprCallOptions = (Expression<CallOptions>) expressions[3];
 
         String rpcName = ((Literal<String>) expressions[0]).getSingle();
         rpc = SkGrpc.getInstance().getRpcManager().getClientRpc(rpcName);
@@ -82,7 +86,8 @@ public class SecAsyncRpc extends Section {
         if (channel != null) {
             Message request = exprRequest.getSingle(event);
             if (request != null) {
-                rpc.invoke(channel, request, SkriptStreamObserver.newBuilder()
+                CallOptions callOptions = exprCallOptions != null ? exprCallOptions.getOptionalSingle(event).orElse(CallOptions.DEFAULT) : CallOptions.DEFAULT;
+                rpc.invoke(channel, request, callOptions, SkriptStreamObserver.newBuilder()
                         .onNextTrigger(onNextTrigger)
                         .onErrorTrigger(onErrorTrigger)
                         .onCompleteTrigger(onCompleteTrigger)

@@ -8,6 +8,7 @@ import ch.njol.util.Kleenean;
 import com.github.officialdonut.skgrpc.SkGrpc;
 import com.github.officialdonut.skgrpc.impl.ClientRpc;
 import com.google.protobuf.Message;
+import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.StatusRuntimeException;
 import org.bukkit.event.Event;
@@ -19,11 +20,12 @@ import java.util.logging.Level;
 public class ExprRpcResponse extends SimpleExpression<Message> {
 
     static {
-        Skript.registerExpression(ExprRpcResponse.class, Message.class, ExpressionType.COMBINED, "response[s] of [g]rpc %*string% for [request] %protobufmessage% using %grpcchannel%");
+        Skript.registerExpression(ExprRpcResponse.class, Message.class, ExpressionType.COMBINED, "response[s] of [g]rpc %*string% for [request] %protobufmessage% using %grpcchannel% [with %-grpccalloptions%]");
     }
 
     private Expression<Message> exprRequest;
     private Expression<Channel> exprChannel;
+    private Expression<CallOptions> exprCallOptions;
     private ClientRpc rpc;
 
     @Override
@@ -31,6 +33,7 @@ public class ExprRpcResponse extends SimpleExpression<Message> {
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult) {
         exprRequest = (Expression<Message>) expressions[1];
         exprChannel = (Expression<Channel>) expressions[2];
+        exprCallOptions = (Expression<CallOptions>) expressions[3];
         String rpcName = ((Literal<String>) expressions[0]).getSingle();
         rpc = SkGrpc.getInstance().getRpcManager().getClientRpc(rpcName);
         if (rpc == null) {
@@ -49,7 +52,8 @@ public class ExprRpcResponse extends SimpleExpression<Message> {
         try {
             Message request = exprRequest.getSingle(event);
             Channel channel = exprChannel.getSingle(event);
-            return channel != null && request != null ? rpc.invoke(channel, request) : null;
+            CallOptions callOptions = exprCallOptions != null ? exprCallOptions.getOptionalSingle(event).orElse(CallOptions.DEFAULT) : CallOptions.DEFAULT;
+            return channel != null && request != null ? rpc.invoke(channel, request, callOptions) : null;
         } catch (StatusRuntimeException e) {
             SkGrpc.getInstance().getLogger().log(Level.WARNING, "gRPC request failed", e);
             return null;

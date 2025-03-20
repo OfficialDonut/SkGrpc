@@ -35,8 +35,8 @@ public class ExprNewServer extends SectionExpression<Server> {
     private List<ServiceDescriptor> services;
     private Expression<Number> exprPort;
     private Expression<ServerCredentials> exprCredentials;
-    private Expression<Number> exprMaxInnboundMessageSize;
-    private Expression<Number> exprMaxInnboundMetadataSize;
+    private Expression<Number> exprMaxInboundMessageSize;
+    private Expression<Number> exprMaxInboundMetadataSize;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -52,8 +52,8 @@ public class ExprNewServer extends SectionExpression<Server> {
 
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.get("credentials", Expression.class, false);
-        exprMaxInnboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
-        exprMaxInnboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
+        exprMaxInboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
+        exprMaxInboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
 
         services = new ArrayList<>();
         Literal<String> serviceNames = (Literal<String>) expressions[0];
@@ -74,11 +74,11 @@ public class ExprNewServer extends SectionExpression<Server> {
         ServerCredentials credentials = exprCredentials.getSingle(event);
         if (port != null && credentials != null) {
             ServerBuilder<?> builder = Grpc.newServerBuilderForPort(port.intValue(), credentials);
-            if (exprMaxInnboundMessageSize != null) {
-                exprMaxInnboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
+            if (exprMaxInboundMessageSize != null) {
+                exprMaxInboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
             }
-            if (exprMaxInnboundMetadataSize != null) {
-                exprMaxInnboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
+            if (exprMaxInboundMetadataSize != null) {
+                exprMaxInboundMetadataSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMetadataSize(n.intValue()));
             }
             Server server = SkGrpc.getInstance().getRpcManager().createServer(builder, services);
             return new Server[]{server};
