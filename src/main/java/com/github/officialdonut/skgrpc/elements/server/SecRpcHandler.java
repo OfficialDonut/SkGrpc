@@ -101,7 +101,7 @@ public class SecRpcHandler extends Section {
             if (responseTrigger != null) {
                 handler.setRequestObserver((request, responseStream) -> {
                     GrpcRespondingEvent respondingEvent = new GrpcRespondingEvent(request, responseStream);
-                    TriggerItem.walk(responseTrigger, respondingEvent);
+                    responseTrigger.execute(respondingEvent);
                 });
             } else {
                 handler.setStreamObserverBuilder(SkriptStreamObserver.newBuilder()

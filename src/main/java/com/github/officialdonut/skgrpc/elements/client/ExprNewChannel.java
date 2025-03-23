@@ -24,6 +24,7 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
                 .addEntryData(new ExpressionEntryData<>("host", null, false, String.class))
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
                 .addEntryData(new ExpressionEntryData<>("credentials", null, true, ChannelCredentials.class))
+                .addEntryData(new ExpressionEntryData<>("interceptors", null, true, ClientInterceptor.class))
                 .addEntryData(new ExpressionEntryData<>("max inbound message size", null, true, Number.class))
                 .addEntryData(new ExpressionEntryData<>("max inbound metadata size", null, true, Number.class))
                 .build();
@@ -34,6 +35,7 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
     private Expression<String> exprHost;
     private Expression<Number> exprPort;
     private Expression<ChannelCredentials> exprCredentials;
+    private Expression<ClientInterceptor> exprInterceptors;
     private Expression<Number> exprMaxInboundMessageSize;
     private Expression<Number> exprMaxInboundMetadataSize;
 
@@ -50,6 +52,7 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
         exprHost = entryContainer.get("host", Expression.class, false);
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.getOptional("credentials", Expression.class, false);
+        exprInterceptors = entryContainer.getOptional("interceptors", Expression.class, false);
         exprMaxInboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
         exprMaxInboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
         return true;
@@ -62,6 +65,9 @@ public class ExprNewChannel extends SectionExpression<ManagedChannel> {
         if (host != null && port != null) {
             ChannelCredentials credentials = exprCredentials != null ? exprCredentials.getOptionalSingle(event).orElse(TlsChannelCredentials.create()) : TlsChannelCredentials.create();
             ManagedChannelBuilder<?> builder = Grpc.newChannelBuilderForAddress(host, port.intValue(), credentials);
+            if (exprInterceptors != null) {
+                builder.intercept(exprInterceptors.getArray(event));
+            }
             if (exprMaxInboundMessageSize != null) {
                 exprMaxInboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
             }

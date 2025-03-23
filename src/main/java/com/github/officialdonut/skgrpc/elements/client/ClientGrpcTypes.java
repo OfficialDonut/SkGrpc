@@ -2,10 +2,7 @@ package com.github.officialdonut.skgrpc.elements.client;
 
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.registrations.Classes;
-import io.grpc.CallCredentials;
-import io.grpc.CallOptions;
-import io.grpc.ChannelCredentials;
-import io.grpc.ManagedChannel;
+import io.grpc.*;
 
 public class ClientGrpcTypes {
 
@@ -25,5 +22,13 @@ public class ClientGrpcTypes {
         Classes.registerClass(new ClassInfo<>(CallCredentials.class, "grpccallcredentials")
                 .name("gRPC Call Credentials")
                 .user("grpc ?call ?credentials"));
+
+        Classes.registerClass(new ClassInfo<>(ClientInterceptor.class, "grpcclientinterceptor")
+                .name("gRPC Client Interceptor")
+                .user("grpc ?client ?interceptors?"));
+
+        Classes.registerClass(new ClassInfo<>(MethodDescriptor.class, "grpcmethoddescriptor")
+                .name("gRPC Method Descriptor")
+                .user("grpc ?method ?descriptors?"));
     }
 }
