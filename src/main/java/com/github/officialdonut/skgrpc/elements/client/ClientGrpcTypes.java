@@ -30,5 +30,9 @@ public class ClientGrpcTypes {
         Classes.registerClass(new ClassInfo<>(MethodDescriptor.class, "grpcmethoddescriptor")
                 .name("gRPC Method Descriptor")
                 .user("grpc ?method ?descriptors?"));
+
+        Classes.registerClass(new ClassInfo<>(CallCredentials.RequestInfo.class, "grpcrequestinfo")
+                .name("gRPC Request Info")
+                .user("grpc ?request ?infos?"));
     }
 }

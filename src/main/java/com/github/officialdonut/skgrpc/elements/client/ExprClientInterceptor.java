@@ -17,7 +17,7 @@ import java.util.List;
 public class ExprClientInterceptor extends SectionExpression<ClientInterceptor> {
 
     static {
-        Skript.registerExpression(ExprClientInterceptor.class, ClientInterceptor.class, ExpressionType.SIMPLE, "[g]rpc client interceptor");
+        Skript.registerExpression(ExprClientInterceptor.class, ClientInterceptor.class, ExpressionType.SIMPLE, "[[g]rpc] client interceptor");
     }
 
     private Trigger trigger;

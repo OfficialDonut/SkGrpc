@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ExprCallOptions extends SectionExpression<CallOptions> {
 
     static {
-        Skript.registerExpression(ExprCallOptions.class, CallOptions.class, ExpressionType.SIMPLE, "[g]rpc call options");
+        Skript.registerExpression(ExprCallOptions.class, CallOptions.class, ExpressionType.SIMPLE, "[[g]rpc] call options");
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("authority", null, true, String.class))
                 .addEntryData(new ExpressionEntryData<>("call credentials", null, true, CallCredentials.class))
