@@ -25,6 +25,7 @@ public class ExprNewServer extends SectionExpression<Server> {
         entryValidator = EntryValidator.builder()
                 .addEntryData(new ExpressionEntryData<>("port", null, false, Number.class))
                 .addEntryData(new ExpressionEntryData<>("credentials", null, false, ServerCredentials.class))
+                .addEntryData(new ExpressionEntryData<>("interceptors", null, true, ServerInterceptor.class))
                 .addEntryData(new ExpressionEntryData<>("max inbound message size", null, true, Number.class))
                 .addEntryData(new ExpressionEntryData<>("max inbound metadata size", null, true, Number.class))
                 .build();
@@ -35,6 +36,7 @@ public class ExprNewServer extends SectionExpression<Server> {
     private List<ServiceDescriptor> services;
     private Expression<Number> exprPort;
     private Expression<ServerCredentials> exprCredentials;
+    private Expression<ServerInterceptor> exprInterceptors;
     private Expression<Number> exprMaxInboundMessageSize;
     private Expression<Number> exprMaxInboundMetadataSize;
 
@@ -52,6 +54,7 @@ public class ExprNewServer extends SectionExpression<Server> {
 
         exprPort = entryContainer.get("port", Expression.class, false);
         exprCredentials = entryContainer.get("credentials", Expression.class, false);
+        exprInterceptors = entryContainer.getOptional("interceptors", Expression.class, false);
         exprMaxInboundMessageSize = entryContainer.getOptional("max inbound message size", Expression.class, false);
         exprMaxInboundMetadataSize = entryContainer.getOptional("max inbound metadata size", Expression.class, false);
 
@@ -74,6 +77,11 @@ public class ExprNewServer extends SectionExpression<Server> {
         ServerCredentials credentials = exprCredentials.getSingle(event);
         if (port != null && credentials != null) {
             ServerBuilder<?> builder = Grpc.newServerBuilderForPort(port.intValue(), credentials);
+            if (exprInterceptors != null) {
+                for (ServerInterceptor interceptor : exprInterceptors.getArray(event)) {
+                    builder.intercept(interceptor);
+                }
+            }
             if (exprMaxInboundMessageSize != null) {
                 exprMaxInboundMessageSize.getOptionalSingle(event).ifPresent(n -> builder.maxInboundMessageSize(n.intValue()));
             }

@@ -6,6 +6,7 @@ import ch.njol.skript.classes.EnumClassInfo;
 import ch.njol.skript.classes.Parser;
 import ch.njol.skript.lang.ParseContext;
 import ch.njol.skript.registrations.Classes;
+import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -25,6 +26,10 @@ public class GrpcTypes {
         Classes.registerClass(new EnumClassInfo<>(Status.Code.class, "grpcstatuscode", "grpc status codes")
                 .name("gRPC Status Code")
                 .user("grpc ?status ?codes?"));
+
+        Classes.registerClass(new ClassInfo<>(Context.class, "grpccontext")
+                .name("gRPC Context")
+                .user("grpc ?contexts?"));
 
         Classes.registerClass(new ClassInfo<>(Metadata.class, "grpcmetadata")
                 .name("gRPC Metadata")

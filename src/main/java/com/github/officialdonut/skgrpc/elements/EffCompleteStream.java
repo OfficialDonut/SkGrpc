@@ -37,8 +37,7 @@ public class EffCompleteStream extends Effect {
         StreamObserver<Message> stream = exprStream.getSingle(event);
         if (stream != null) {
             if (exprError != null) {
-                Status status = exprError.getSingle(event);
-                stream.onError(status != null ? status.asRuntimeException() : Status.INTERNAL.asRuntimeException());
+                stream.onError(exprError.getOptionalSingle(event).orElse(Status.UNKNOWN).asRuntimeException());
             } else {
                 stream.onCompleted();
             }

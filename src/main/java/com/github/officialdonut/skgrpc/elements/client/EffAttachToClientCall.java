@@ -12,11 +12,11 @@ import io.grpc.Metadata;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
-@Name("Attach to Intercepted Client Call")
+@Name("Attach to gRPC Client Call")
 public class EffAttachToClientCall extends Effect {
 
     static {
-        Skript.registerEffect(EffAttachToClientCall.class, "attach %grpcmetadata/grpccalloptions% [to intercepted [client] call]");
+        Skript.registerEffect(EffAttachToClientCall.class, "attach %grpcmetadata/grpccalloptions% to [intercepted] client call");
     }
 
     private Expression<Object> exprAttachment;
@@ -25,7 +25,7 @@ public class EffAttachToClientCall extends Effect {
     @SuppressWarnings("unchecked")
     public boolean init(Expression<?>[] expressions, int i, Kleenean kleenean, SkriptParser.ParseResult parseResult) {
         if (!getParser().isCurrentEvent(ClientInterceptorEvent.class)) {
-            Skript.error("Attach to intercepted client call can only be used in a client interceptor section.");
+            Skript.error("Attach to client call can only be used in a client interceptor section.");
             return false;
         }
         exprAttachment = (Expression<Object>) expressions[0];
@@ -44,6 +44,6 @@ public class EffAttachToClientCall extends Effect {
 
     @Override
     public String toString(@Nullable Event event, boolean b) {
-        return "attach " + exprAttachment.toString(event, b);
+        return "attach " + exprAttachment.toString(event, b) + " to client call";
     }
 }
