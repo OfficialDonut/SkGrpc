@@ -72,7 +72,11 @@ public class GrpcTypes {
                     }
                     @Override
                     public Metadata.Key<?> parse(String s, ParseContext context) {
-                        return Metadata.Key.of(s, Metadata.ASCII_STRING_MARSHALLER);
+                        try {
+                            return Metadata.Key.of(s, Metadata.ASCII_STRING_MARSHALLER);
+                        } catch (Exception e) {
+                            return null;
+                        }
                     }
                 }));
     }
