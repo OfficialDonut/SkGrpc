@@ -31,6 +31,10 @@ public class GrpcTypes {
                 .name("gRPC Context")
                 .user("grpc ?contexts?"));
 
+        Classes.registerClass(new ClassInfo<>(Context.Key.class, "grpccontextkey")
+                .name("gRPC Context Key")
+                .user("grpc ?context ?keys?"));
+
         Classes.registerClass(new ClassInfo<>(Metadata.class, "grpcmetadata")
                 .name("gRPC Metadata")
                 .user("grpc ?metadata")
