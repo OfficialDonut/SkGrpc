@@ -2,6 +2,7 @@ package com.github.officialdonut.skgrpc.elements.client;
 
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.registrations.Classes;
+import ch.njol.skript.util.Utils;
 import io.grpc.*;
 
 public class ClientGrpcTypes {
@@ -18,6 +19,7 @@ public class ClientGrpcTypes {
         Classes.registerClass(new ClassInfo<>(CallOptions.class, "grpccalloptions")
                 .name("gRPC Call Options")
                 .user("grpc ?call ?options"));
+        Utils.addPluralOverride("grpccalloptions", "multiplegrpccalloptions");
 
         Classes.registerClass(new ClassInfo<>(CallCredentials.class, "grpccallcredentials")
                 .name("gRPC Call Credentials")
